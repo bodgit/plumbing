@@ -22,11 +22,11 @@ func (ir *interleaveReader) Read(p []byte) (int, error) {
 		return 0, errInvalidStripe
 	}
 
-	if len(p)%len(ir.readers)*ir.stripe != 0 {
-		return 0, errIncompleteStripe
-	}
-
 	if len(ir.readers) > 0 {
+		if len(p)%len(ir.readers)*ir.stripe != 0 {
+			return 0, errIncompleteStripe
+		}
+
 		total, seenEOF := 0, false
 		for i := 0; i < len(p); i += ir.stripe {
 			n, err := ir.readers[i/ir.stripe%len(ir.readers)].Read(p[i : i+ir.stripe])
