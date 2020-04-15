@@ -1,0 +1,48 @@
+package plumbing
+
+import (
+	"archive/zip"
+	"bytes"
+	"fmt"
+	"io"
+	"io/ioutil"
+)
+
+func ExampleWriteCounter() {
+	in := []byte{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
+	writer := WriteCounter{}
+	reader := io.TeeReader(bytes.NewReader(in), &writer)
+	if _, err := io.CopyN(ioutil.Discard, reader, 4); err != nil {
+		panic(err)
+	}
+	if _, err := io.Copy(ioutil.Discard, reader); err != nil {
+		panic(err)
+	}
+
+	fmt.Println(writer.Count())
+	// Output: 10
+}
+
+func ExampleTeeReaderAt() {
+	// Smallest valid zip archive
+	in := []byte{80, 75, 5, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+	writer := WriteCounter{}
+	if _, err := zip.NewReader(TeeReaderAt(bytes.NewReader(in), &writer), int64(len(in))); err != nil {
+		panic(err)
+	}
+
+	fmt.Println(writer.Count())
+	// Output: 44
+}
+
+func ExamplePaddedReader() {
+	in := []byte{1, 2, 3, 4}
+	reader := PaddedReader(bytes.NewReader(in), 8, 0)
+	writer := new(bytes.Buffer)
+	if _, err := io.Copy(writer, reader); err != nil {
+		panic(err)
+	}
+
+	fmt.Println(writer.Bytes())
+	// Output: [1 2 3 4 0 0 0 0]
+}

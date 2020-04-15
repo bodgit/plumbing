@@ -19,4 +19,5 @@ func TestTeeReaderAt(t *testing.T) {
 	assert.Equal(t, 3, n)
 	assert.Nil(t, err)
 	assert.Equal(t, []byte("cde"), dst)
+	assert.Equal(t, []byte("cde"), wb.Bytes())
 }
