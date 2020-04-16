@@ -2,22 +2,98 @@ package plumbing
 
 import (
 	"bytes"
+	"errors"
+	"io"
+	"io/ioutil"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
+var errWrite = errors.New("error writing")
+
+type errorWriter struct {
+	io.Writer
+}
+
+func (errorWriter) Write(p []byte) (n int, err error) {
+	return 0, errWrite
+}
+
+var in = []byte("abcdefghij")
+
 func TestTeeReaderAt(t *testing.T) {
-	src := []byte("abcdef")
-	dst := make([]byte, 3)
-	rb := bytes.NewReader(src)
-	wb := new(bytes.Buffer)
+	tables := []struct {
+		name   string
+		reader io.ReaderAt
+		writer io.Writer
+		length int
+		offset int64
+		n      int
+		err    error
+	}{
+		{
+			"success",
+			bytes.NewReader(in),
+			ioutil.Discard,
+			3,
+			2,
+			3,
+			nil,
+		},
+		{
+			"fail",
+			bytes.NewReader(in),
+			errorWriter{},
+			3,
+			2,
+			0,
+			errWrite,
+		},
+	}
 
-	r := TeeReaderAt(rb, wb)
+	for _, table := range tables {
+		t.Run(table.name, func(t *testing.T) {
+			r := TeeReaderAt(table.reader, table.writer)
+			dst := make([]byte, table.length)
+			n, err := r.ReadAt(dst, table.offset)
+			assert.Equal(t, table.n, n)
+			assert.Equal(t, table.err, err)
+		})
+	}
+}
 
-	n, err := r.ReadAt(dst, 2)
-	assert.Equal(t, 3, n)
-	assert.Nil(t, err)
-	assert.Equal(t, []byte("cde"), dst)
-	assert.Equal(t, []byte("cde"), wb.Bytes())
+func TestTeeReadCloser(t *testing.T) {
+	tables := []struct {
+		name   string
+		reader io.ReadCloser
+		writer io.Writer
+		n      int64
+		err    error
+	}{
+		{
+			"success",
+			ioutil.NopCloser(bytes.NewReader(in)),
+			ioutil.Discard,
+			10,
+			nil,
+		},
+		{
+			"fail",
+			ioutil.NopCloser(bytes.NewReader(in)),
+			errorWriter{},
+			0,
+			errWrite,
+		},
+	}
+
+	for _, table := range tables {
+		t.Run(table.name, func(t *testing.T) {
+			r := TeeReadCloser(table.reader, table.writer)
+			defer r.Close()
+			n, err := io.Copy(ioutil.Discard, r)
+			assert.Equal(t, table.n, n)
+			assert.Equal(t, table.err, err)
+		})
+	}
 }

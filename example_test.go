@@ -35,6 +35,19 @@ func ExampleTeeReaderAt() {
 	// Output: 44
 }
 
+func ExampleTeeReadCloser() {
+	in := []byte{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
+	writer := WriteCounter{}
+	reader := TeeReadCloser(ioutil.NopCloser(bytes.NewReader(in)), &writer)
+	defer reader.Close()
+	if _, err := io.Copy(ioutil.Discard, reader); err != nil {
+		panic(err)
+	}
+
+	fmt.Println(writer.Count())
+	// Output: 10
+}
+
 func ExamplePaddedReader() {
 	in := []byte{1, 2, 3, 4}
 	reader := PaddedReader(bytes.NewReader(in), 8, 0)
