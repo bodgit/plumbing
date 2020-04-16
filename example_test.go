@@ -59,3 +59,25 @@ func ExamplePaddedReader() {
 	fmt.Println(writer.Bytes())
 	// Output: [1 2 3 4 0 0 0 0]
 }
+
+func ExampleNopWriteCloser() {
+	writer := NopWriteCloser(new(bytes.Buffer))
+
+	fmt.Println(writer.Close())
+	// Output: <nil>
+}
+
+func ExampleMultiWriteCloser() {
+	in := []byte{0, 1, 2, 3}
+	b1, b2 := new(bytes.Buffer), new(bytes.Buffer)
+	writer := MultiWriteCloser(NopWriteCloser(b1), NopWriteCloser(b2))
+	if _, err := writer.Write(in); err != nil {
+		panic(err)
+	}
+	if err := writer.Close(); err != nil {
+		panic(err)
+	}
+
+	fmt.Println(b1.Bytes(), b2.Bytes())
+	// Output: [0 1 2 3] [0 1 2 3]
+}
