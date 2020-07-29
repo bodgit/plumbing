@@ -81,3 +81,18 @@ func ExampleMultiWriteCloser() {
 	fmt.Println(b1.Bytes(), b2.Bytes())
 	// Output: [0 1 2 3] [0 1 2 3]
 }
+
+func ExampleLimitReadCloser() {
+	in := []byte{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
+	reader := LimitReadCloser(ioutil.NopCloser(bytes.NewReader(in)), 5)
+	writer := new(bytes.Buffer)
+	if _, err := io.Copy(writer, reader); err != nil {
+		panic(err)
+	}
+	if err := reader.Close(); err != nil {
+		panic(err)
+	}
+
+	fmt.Println(writer.Bytes())
+	// Output: [0 1 2 3 4]
+}
