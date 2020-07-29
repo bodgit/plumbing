@@ -23,8 +23,7 @@ func (errorWriter) Write(p []byte) (n int, err error) {
 var in = []byte("abcdefghij")
 
 func TestTeeReaderAt(t *testing.T) {
-	tables := []struct {
-		name   string
+	tables := map[string]struct {
 		reader io.ReaderAt
 		writer io.Writer
 		length int
@@ -32,8 +31,7 @@ func TestTeeReaderAt(t *testing.T) {
 		n      int
 		err    error
 	}{
-		{
-			"success",
+		"success": {
 			bytes.NewReader(in),
 			ioutil.Discard,
 			3,
@@ -41,8 +39,7 @@ func TestTeeReaderAt(t *testing.T) {
 			3,
 			nil,
 		},
-		{
-			"fail",
+		"fail": {
 			bytes.NewReader(in),
 			errorWriter{},
 			3,
@@ -52,8 +49,8 @@ func TestTeeReaderAt(t *testing.T) {
 		},
 	}
 
-	for _, table := range tables {
-		t.Run(table.name, func(t *testing.T) {
+	for name, table := range tables {
+		t.Run(name, func(t *testing.T) {
 			r := TeeReaderAt(table.reader, table.writer)
 			dst := make([]byte, table.length)
 			n, err := r.ReadAt(dst, table.offset)
@@ -64,22 +61,19 @@ func TestTeeReaderAt(t *testing.T) {
 }
 
 func TestTeeReadCloser(t *testing.T) {
-	tables := []struct {
-		name   string
+	tables := map[string]struct {
 		reader io.ReadCloser
 		writer io.Writer
 		n      int64
 		err    error
 	}{
-		{
-			"success",
+		"success": {
 			ioutil.NopCloser(bytes.NewReader(in)),
 			ioutil.Discard,
 			10,
 			nil,
 		},
-		{
-			"fail",
+		"fail": {
 			ioutil.NopCloser(bytes.NewReader(in)),
 			errorWriter{},
 			0,
@@ -87,8 +81,8 @@ func TestTeeReadCloser(t *testing.T) {
 		},
 	}
 
-	for _, table := range tables {
-		t.Run(table.name, func(t *testing.T) {
+	for name, table := range tables {
+		t.Run(name, func(t *testing.T) {
 			r := TeeReadCloser(table.reader, table.writer)
 			defer r.Close()
 			n, err := io.Copy(ioutil.Discard, r)

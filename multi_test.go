@@ -32,43 +32,37 @@ func (partialWriter) Write(p []byte) (n int, err error) {
 }
 
 func TestMultiWriteCloser(t *testing.T) {
-	tables := []struct {
-		name     string
+	tables := map[string]struct {
 		writer   io.WriteCloser
 		n        int
 		writeErr error
 		closeErr error
 	}{
-		{
-			"success",
+		"success": {
 			NopWriteCloser(new(bytes.Buffer)),
 			10,
 			nil,
 			nil,
 		},
-		{
-			"nested",
+		"nested": {
 			MultiWriteCloser(NopWriteCloser(new(bytes.Buffer))),
 			10,
 			nil,
 			nil,
 		},
-		{
-			"write",
+		"write": {
 			NopWriteCloser(errorWriter{}),
 			0,
 			errWrite,
 			nil,
 		},
-		{
-			"close",
+		"close": {
 			errorWriteCloser{},
 			10,
 			nil,
 			errClose,
 		},
-		{
-			"partial",
+		"partial": {
 			NopWriteCloser(partialWriter{}),
 			9,
 			io.ErrShortWrite,
@@ -76,8 +70,8 @@ func TestMultiWriteCloser(t *testing.T) {
 		},
 	}
 
-	for _, table := range tables {
-		t.Run(table.name, func(t *testing.T) {
+	for name, table := range tables {
+		t.Run(name, func(t *testing.T) {
 			dst := NopWriteCloser(new(bytes.Buffer))
 			w := MultiWriteCloser(table.writer, dst)
 			n, err := w.Write(in)
