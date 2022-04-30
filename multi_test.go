@@ -32,6 +32,8 @@ func (partialWriter) Write(p []byte) (n int, err error) {
 }
 
 func TestMultiWriteCloser(t *testing.T) {
+	in := []byte("abcdefghij")
+
 	tables := map[string]struct {
 		writer   io.WriteCloser
 		n        int

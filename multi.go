@@ -12,11 +12,14 @@ func (t *multiWriteCloser) Write(p []byte) (n int, err error) {
 		if err != nil {
 			return
 		}
+
 		if n != len(p) {
 			err = io.ErrShortWrite
+
 			return
 		}
 	}
+
 	return len(p), nil
 }
 
@@ -27,6 +30,7 @@ func (t *multiWriteCloser) Close() (err error) {
 			return
 		}
 	}
+
 	return
 }
 
@@ -38,6 +42,7 @@ func (t *multiWriteCloser) Close() (err error) {
 // stops and returns the error; it does not continue down the list.
 func MultiWriteCloser(writeClosers ...io.WriteCloser) io.WriteCloser {
 	allWriteClosers := make([]io.WriteCloser, 0, len(writeClosers))
+
 	for _, wc := range writeClosers {
 		if mwc, ok := wc.(*multiWriteCloser); ok {
 			allWriteClosers = append(allWriteClosers, mwc.writeClosers...)
@@ -45,5 +50,6 @@ func MultiWriteCloser(writeClosers ...io.WriteCloser) io.WriteCloser {
 			allWriteClosers = append(allWriteClosers, wc)
 		}
 	}
+
 	return &multiWriteCloser{allWriteClosers}
 }

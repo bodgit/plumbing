@@ -1,0 +1,10 @@
+---
+linters:
+  enable-all: true
+  disable:
+    - exhaustivestruct
+    - paralleltest
+    - scopelint
+    - testpackage
+    - varnamelen
+    - wrapcheck

@@ -14,6 +14,7 @@ func (t *teeReaderAt) ReadAt(p []byte, off int64) (n int, err error) {
 			return n, err
 		}
 	}
+
 	return
 }
 
@@ -38,6 +39,7 @@ func (t *teeReadCloser) Read(p []byte) (n int, err error) {
 			return n, err
 		}
 	}
+
 	return
 }
 
