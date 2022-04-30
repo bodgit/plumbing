@@ -13,6 +13,7 @@ type WriteCounter struct {
 func (wc *WriteCounter) Write(p []byte) (int, error) {
 	n := len(p)
 	atomic.AddUint64(&wc.count, uint64(n))
+
 	return n, nil
 }
 

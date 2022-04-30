@@ -20,9 +20,9 @@ func (errorWriter) Write(p []byte) (n int, err error) {
 	return 0, errWrite
 }
 
-var in = []byte("abcdefghij")
-
 func TestTeeReaderAt(t *testing.T) {
+	in := []byte("abcdefghij")
+
 	tables := map[string]struct {
 		reader io.ReaderAt
 		writer io.Writer
@@ -61,6 +61,8 @@ func TestTeeReaderAt(t *testing.T) {
 }
 
 func TestTeeReadCloser(t *testing.T) {
+	in := []byte("abcdefghij")
+
 	tables := map[string]struct {
 		reader io.ReadCloser
 		writer io.Writer
