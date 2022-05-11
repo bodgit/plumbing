@@ -1,12 +1,12 @@
-package plumbing
+package plumbing_test
 
 import (
 	"bytes"
 	"errors"
 	"io"
-	"io/ioutil"
 	"testing"
 
+	"github.com/bodgit/plumbing"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -21,9 +21,12 @@ func (errorWriter) Write(p []byte) (n int, err error) {
 }
 
 func TestTeeReaderAt(t *testing.T) {
+	t.Parallel()
+
 	in := []byte("abcdefghij")
 
-	tables := map[string]struct {
+	tables := []struct {
+		name   string
 		reader io.ReaderAt
 		writer io.Writer
 		length int
@@ -31,15 +34,17 @@ func TestTeeReaderAt(t *testing.T) {
 		n      int
 		err    error
 	}{
-		"success": {
+		{
+			"success",
 			bytes.NewReader(in),
-			ioutil.Discard,
+			io.Discard,
 			3,
 			2,
 			3,
 			nil,
 		},
-		"fail": {
+		{
+			"fail",
 			bytes.NewReader(in),
 			errorWriter{},
 			3,
@@ -49,9 +54,11 @@ func TestTeeReaderAt(t *testing.T) {
 		},
 	}
 
-	for name, table := range tables {
-		t.Run(name, func(t *testing.T) {
-			r := TeeReaderAt(table.reader, table.writer)
+	for _, table := range tables {
+		table := table
+		t.Run(table.name, func(t *testing.T) {
+			t.Parallel()
+			r := plumbing.TeeReaderAt(table.reader, table.writer)
 			dst := make([]byte, table.length)
 			n, err := r.ReadAt(dst, table.offset)
 			assert.Equal(t, table.n, n)
@@ -61,33 +68,40 @@ func TestTeeReaderAt(t *testing.T) {
 }
 
 func TestTeeReadCloser(t *testing.T) {
+	t.Parallel()
+
 	in := []byte("abcdefghij")
 
-	tables := map[string]struct {
+	tables := []struct {
+		name   string
 		reader io.ReadCloser
 		writer io.Writer
 		n      int64
 		err    error
 	}{
-		"success": {
-			ioutil.NopCloser(bytes.NewReader(in)),
-			ioutil.Discard,
+		{
+			"success",
+			io.NopCloser(bytes.NewReader(in)),
+			io.Discard,
 			10,
 			nil,
 		},
-		"fail": {
-			ioutil.NopCloser(bytes.NewReader(in)),
+		{
+			"fail",
+			io.NopCloser(bytes.NewReader(in)),
 			errorWriter{},
 			0,
 			errWrite,
 		},
 	}
 
-	for name, table := range tables {
-		t.Run(name, func(t *testing.T) {
-			r := TeeReadCloser(table.reader, table.writer)
+	for _, table := range tables {
+		table := table
+		t.Run(table.name, func(t *testing.T) {
+			t.Parallel()
+			r := plumbing.TeeReadCloser(table.reader, table.writer)
 			defer r.Close()
-			n, err := io.Copy(ioutil.Discard, r)
+			n, err := io.Copy(io.Discard, r)
 			assert.Equal(t, table.n, n)
 			assert.Equal(t, table.err, err)
 		})

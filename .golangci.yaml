@@ -3,8 +3,7 @@ linters:
   enable-all: true
   disable:
     - exhaustivestruct
-    - paralleltest
-    - scopelint
-    - testpackage
+    - exhaustruct
+    - nonamedreturns
     - varnamelen
     - wrapcheck

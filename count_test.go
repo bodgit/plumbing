@@ -1,13 +1,16 @@
-package plumbing
+package plumbing_test
 
 import (
 	"testing"
 
+	"github.com/bodgit/plumbing"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestWriteCounter(t *testing.T) {
-	w := &WriteCounter{}
+	t.Parallel()
+
+	w := &plumbing.WriteCounter{}
 
 	n, err := w.Write([]byte("abcd"))
 	assert.Equal(t, 4, n)

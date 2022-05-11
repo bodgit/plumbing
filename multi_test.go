@@ -1,4 +1,4 @@
-package plumbing
+package plumbing_test
 
 import (
 	"bytes"
@@ -6,6 +6,7 @@ import (
 	"io"
 	"testing"
 
+	"github.com/bodgit/plumbing"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -31,51 +32,62 @@ func (partialWriter) Write(p []byte) (n int, err error) {
 	return len(p) - 1, nil
 }
 
+//nolint:funlen
 func TestMultiWriteCloser(t *testing.T) {
+	t.Parallel()
+
 	in := []byte("abcdefghij")
 
-	tables := map[string]struct {
+	tables := []struct {
+		name     string
 		writer   io.WriteCloser
 		n        int
 		writeErr error
 		closeErr error
 	}{
-		"success": {
-			NopWriteCloser(new(bytes.Buffer)),
+		{
+			"success",
+			plumbing.NopWriteCloser(new(bytes.Buffer)),
 			10,
 			nil,
 			nil,
 		},
-		"nested": {
-			MultiWriteCloser(NopWriteCloser(new(bytes.Buffer))),
+		{
+			"nested",
+			plumbing.MultiWriteCloser(plumbing.NopWriteCloser(new(bytes.Buffer))),
 			10,
 			nil,
 			nil,
 		},
-		"write": {
-			NopWriteCloser(errorWriter{}),
+		{
+			"write",
+			plumbing.NopWriteCloser(errorWriter{}),
 			0,
 			errWrite,
 			nil,
 		},
-		"close": {
+		{
+			"close",
 			errorWriteCloser{},
 			10,
 			nil,
 			errClose,
 		},
-		"partial": {
-			NopWriteCloser(partialWriter{}),
+		{
+			"partial",
+			plumbing.NopWriteCloser(partialWriter{}),
 			9,
 			io.ErrShortWrite,
 			nil,
 		},
 	}
 
-	for name, table := range tables {
-		t.Run(name, func(t *testing.T) {
-			dst := NopWriteCloser(new(bytes.Buffer))
-			w := MultiWriteCloser(table.writer, dst)
+	for _, table := range tables {
+		table := table
+		t.Run(table.name, func(t *testing.T) {
+			t.Parallel()
+			dst := plumbing.NopWriteCloser(new(bytes.Buffer))
+			w := plumbing.MultiWriteCloser(table.writer, dst)
 			n, err := w.Write(in)
 			assert.Equal(t, table.n, n)
 			assert.Equal(t, table.writeErr, err)
