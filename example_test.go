@@ -1,23 +1,24 @@
-package plumbing
+package plumbing_test
 
 import (
 	"archive/zip"
 	"bytes"
 	"fmt"
 	"io"
-	"io/ioutil"
+
+	"github.com/bodgit/plumbing"
 )
 
 func ExampleWriteCounter() {
 	in := []byte{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
-	writer := WriteCounter{}
+	writer := plumbing.WriteCounter{}
 	reader := io.TeeReader(bytes.NewReader(in), &writer)
 
-	if _, err := io.CopyN(ioutil.Discard, reader, 4); err != nil {
+	if _, err := io.CopyN(io.Discard, reader, 4); err != nil {
 		panic(err)
 	}
 
-	if _, err := io.Copy(ioutil.Discard, reader); err != nil {
+	if _, err := io.Copy(io.Discard, reader); err != nil {
 		panic(err)
 	}
 
@@ -29,8 +30,8 @@ func ExampleTeeReaderAt() {
 	// Smallest valid zip archive
 	in := []byte{80, 75, 5, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 
-	writer := WriteCounter{}
-	if _, err := zip.NewReader(TeeReaderAt(bytes.NewReader(in), &writer), int64(len(in))); err != nil {
+	writer := plumbing.WriteCounter{}
+	if _, err := zip.NewReader(plumbing.TeeReaderAt(bytes.NewReader(in), &writer), int64(len(in))); err != nil {
 		panic(err)
 	}
 
@@ -41,12 +42,12 @@ func ExampleTeeReaderAt() {
 func ExampleTeeReadCloser() {
 	in := []byte{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
 
-	writer := WriteCounter{}
-	reader := TeeReadCloser(ioutil.NopCloser(bytes.NewReader(in)), &writer)
+	writer := plumbing.WriteCounter{}
+	reader := plumbing.TeeReadCloser(io.NopCloser(bytes.NewReader(in)), &writer)
 
 	defer reader.Close()
 
-	if _, err := io.Copy(ioutil.Discard, reader); err != nil {
+	if _, err := io.Copy(io.Discard, reader); err != nil {
 		panic(err)
 	}
 
@@ -57,7 +58,7 @@ func ExampleTeeReadCloser() {
 func ExamplePaddedReader() {
 	in := []byte{1, 2, 3, 4}
 
-	reader := PaddedReader(bytes.NewReader(in), 8, 0)
+	reader := plumbing.PaddedReader(bytes.NewReader(in), 8, 0)
 	writer := new(bytes.Buffer)
 
 	if _, err := io.Copy(writer, reader); err != nil {
@@ -69,7 +70,7 @@ func ExamplePaddedReader() {
 }
 
 func ExampleNopWriteCloser() {
-	writer := NopWriteCloser(new(bytes.Buffer))
+	writer := plumbing.NopWriteCloser(new(bytes.Buffer))
 
 	fmt.Println(writer.Close())
 	// Output: <nil>
@@ -78,7 +79,7 @@ func ExampleNopWriteCloser() {
 func ExampleMultiWriteCloser() {
 	in := []byte{0, 1, 2, 3}
 	b1, b2 := new(bytes.Buffer), new(bytes.Buffer)
-	writer := MultiWriteCloser(NopWriteCloser(b1), NopWriteCloser(b2))
+	writer := plumbing.MultiWriteCloser(plumbing.NopWriteCloser(b1), plumbing.NopWriteCloser(b2))
 
 	if _, err := writer.Write(in); err != nil {
 		panic(err)
@@ -92,9 +93,26 @@ func ExampleMultiWriteCloser() {
 	// Output: [0 1 2 3] [0 1 2 3]
 }
 
+func ExampleMultiReadCloser() {
+	b1, b2 := bytes.NewReader([]byte{0, 1, 2, 3}), bytes.NewReader([]byte{4, 5, 6, 7})
+	r := plumbing.MultiReadCloser(io.NopCloser(b1), io.NopCloser(b2))
+	w := new(bytes.Buffer)
+
+	if _, err := io.Copy(w, r); err != nil {
+		panic(err)
+	}
+
+	if err := r.Close(); err != nil {
+		panic(err)
+	}
+
+	fmt.Println(w.Bytes())
+	// Output: [0 1 2 3 4 5 6 7]
+}
+
 func ExampleLimitReadCloser() {
 	in := []byte{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
-	reader := LimitReadCloser(ioutil.NopCloser(bytes.NewReader(in)), 5)
+	reader := plumbing.LimitReadCloser(io.NopCloser(bytes.NewReader(in)), 5)
 	writer := new(bytes.Buffer)
 
 	if _, err := io.Copy(writer, reader); err != nil {
