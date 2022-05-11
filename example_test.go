@@ -93,6 +93,23 @@ func ExampleMultiWriteCloser() {
 	// Output: [0 1 2 3] [0 1 2 3]
 }
 
+func ExampleMultiReadCloser() {
+	b1, b2 := bytes.NewReader([]byte{0, 1, 2, 3}), bytes.NewReader([]byte{4, 5, 6, 7})
+	r := plumbing.MultiReadCloser(io.NopCloser(b1), io.NopCloser(b2))
+	w := new(bytes.Buffer)
+
+	if _, err := io.Copy(w, r); err != nil {
+		panic(err)
+	}
+
+	if err := r.Close(); err != nil {
+		panic(err)
+	}
+
+	fmt.Println(w.Bytes())
+	// Output: [0 1 2 3 4 5 6 7]
+}
+
 func ExampleLimitReadCloser() {
 	in := []byte{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
 	reader := plumbing.LimitReadCloser(io.NopCloser(bytes.NewReader(in)), 5)
