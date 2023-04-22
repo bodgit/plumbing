@@ -16,7 +16,7 @@ type errorWriter struct {
 	io.Writer
 }
 
-func (errorWriter) Write(p []byte) (n int, err error) {
+func (errorWriter) Write(_ []byte) (n int, err error) {
 	return 0, errWrite
 }
 
